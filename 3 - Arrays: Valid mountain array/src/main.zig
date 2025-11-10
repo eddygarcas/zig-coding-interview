@@ -20,6 +20,8 @@ pub fn main() !void {
 
     var valid: bool = false;
 
+    // Only intersting point here is using block names to break or continue, it's
+    // not requires but it works for lerning purposes.
     m: for (mountain, 0..) |elem, i| {
         if (i == max_index) continue :m;
         if (elem < max_value) {
@@ -33,11 +35,13 @@ pub fn main() !void {
 
     // A more efficient way using while
     var i: usize = 0;
-
+    // we can use multiple conditions using while and continue expression to get the top index.
     while (i + 1 < mountain.len and mountain[i] < mountain[i + 1]) : (i += 1) {}
 
     if (i == 0 or i == mountain.len - 1) return error.NoElementToCover;
 
+    // Same for the lowest index, using multiple conditions and the continue espression to check
+    // whether or not the array contains a mountain.
     while (i + 1 < mountain.len and mountain[i] >= mountain[i + 1]) : (i += 1) {}
     std.debug.print("Index {d} and len {d}\n", .{ i, (mountain.len - 1) });
 
