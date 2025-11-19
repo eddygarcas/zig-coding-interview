@@ -5,7 +5,7 @@ pub fn main() !void {
     const elements = [_]usize{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
     std.debug.print("elements {any}\n", .{elements});
 
-    var mid = elements.len / 2;
+    var mid: usize = elements.len / 2;
     var left: usize = 0;
     var right: usize = elements.len;
 
