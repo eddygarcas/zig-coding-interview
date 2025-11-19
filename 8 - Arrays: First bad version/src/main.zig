@@ -1,10 +1,27 @@
 const std = @import("std");
-const _8___Arrays_First_bad_version = @import("_8___Arrays_First_bad_version");
 
 pub fn main() !void {
     // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try _8___Arrays_First_bad_version.bufferedPrint();
+    const elements = [_]usize{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
+    std.debug.print("elements {any}\n", .{elements});
+
+    var mid = elements.len / 2;
+    var left: usize = 0;
+    var right: usize = elements.len;
+
+    while (left < right) {
+        if (isBadVaersion(elements[mid])) {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+        mid = (right + left) / 2;
+    }
+    std.debug.print("First bad version {d}", .{elements[mid]});
+}
+
+fn isBadVaersion(version: usize) bool {
+    return version >= 11;
 }
 
 test "simple test" {
