@@ -4,7 +4,8 @@ pub fn main() !void {
     // Prints to stderr, ignoring potential errors.
 
     const gpa = std.heap.page_allocator;
-    var result = try std.ArrayList(u8).initCapacity(gpa, 5);
+    // you can initialize de ArrayList at 0 but reallocation takes time
+    var result = try std.ArrayList(u8).initCapacity(gpa, 0);
     defer result.deinit(gpa);
 
     const num_a = [_]u4{ 1, 0, 1, 1 };
