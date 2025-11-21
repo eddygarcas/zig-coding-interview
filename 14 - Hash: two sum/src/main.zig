@@ -17,8 +17,6 @@ pub fn main() !void {
     var findMap = std.hash_map.AutoHashMap(u8, u8).init(alloc);
     defer findMap.deinit();
 
-    //var result: [2]u8 = undefined;
-
     outer: for (nums, 0..) |num, i| {
         const val = findMap.get(num);
         if (val) |v| {
@@ -29,5 +27,4 @@ pub fn main() !void {
             try findMap.put((target - num), @intCast(i));
         }
     }
-    //std.debug.print("Result {any}\n", .{result});
 }
