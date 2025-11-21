@@ -1,27 +1,33 @@
 const std = @import("std");
-const _14___Hash_two_sum = @import("_14___Hash_two_sum");
 
 pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try _14___Hash_two_sum.bufferedPrint();
-}
+    // This program solves the Two Sum problem using a hash map approach.
+    // Given an array of integers and a target sum, it finds two numbers that add up to the target.
+    // The solution uses a single pass through the array, storing complements in a hash map.
+    // Time Complexity: O(n) where n is length of input array
+    // Space Complexity: O(n) for storing the hash map
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+    const nums = [_]u8{ 2, 11, 7, 15 };
+    const target: u8 = 26;
 
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const alloc = arena.allocator();
+    defer arena.deinit();
+
+    var findMap = std.hash_map.AutoHashMap(u8, u8).init(alloc);
+    defer findMap.deinit();
+
+    //var result: [2]u8 = undefined;
+
+    outer: for (nums, 0..) |num, i| {
+        const val = findMap.get(num);
+        if (val) |v| {
+            std.debug.print("Positions {d} and {d}\n", .{ v, i });
+            //result = [2]u8{ val.value_ptr.*, @intCast(i) };
+            break :outer;
+        } else {
+            try findMap.put((target - num), @intCast(i));
         }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+    }
+    //std.debug.print("Result {any}\n", .{result});
 }
