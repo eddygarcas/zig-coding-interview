@@ -1,27 +1,36 @@
 const std = @import("std");
-const _15___Hash_contains_duplicates = @import("_15___Hash_contains_duplicates");
 
 pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try _15___Hash_contains_duplicates.bufferedPrint();
+    // This program checks if an array contains any duplicate values using a hash map.
+    // It demonstrates a simple hash-based approach to track and identify duplicates:
+    // 1. Create a map to store seen numbers
+    // 2. Iterate through array once, checking if each number exists in map
+    // 3. Return true immediately when a duplicate is found
+    // 4. Otherwise mark number as seen and continue
+    //
+    // Time Complexity: O(n) - single pass through the array
+    // Space Complexity: O(n) - hash map may store up to n elements
+
+    const nums = [_]u8{ 2, 7, 11, 15, 2 };
+    var gpa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const alloc = gpa.allocator();
+    defer gpa.deinit();
+
+    const result: bool = try duplicates(alloc, nums[0..]); //or &num
+    std.debug.print("Reult is {}\n", .{result});
 }
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+pub fn duplicates(alloc: std.mem.Allocator, nums: []const u8) !bool {
+    var findMap = std.AutoHashMap(u8, bool).init(alloc);
+    defer findMap.deinit();
 
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
+    for (nums) |num| {
+        var result = try findMap.getOrPut(num);
+        if (result.found_existing) {
+            std.debug.print("This ones is duplicated {d}\n", .{num});
+            return result.value_ptr.*;
         }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+        result.value_ptr.* = true;
+    }
+    return false;
 }
