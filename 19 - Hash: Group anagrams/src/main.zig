@@ -12,13 +12,25 @@ const std = @import("std");
 // 1. Character counting using a hash map (groupAnagrams)
 // 2. Sorting characters and using sorted string as key (groupAnagrams2)
 pub fn main() !void {
-    const input = [_][]const u8{ "eat", "tea", "tan", "ate", "nat", "bat" };
+    const input_vec =
+        \\eat
+        \\tea
+        \\tan
+        \\ate
+        \\nat
+        \\bat
+    ;
 
-    var output_buf: [10][]const u8 = undefined;
-    const output = output_buf[0..];
-    std.debug.print("input {any} {any}", .{ input, output });
-    const out_len = try groupAnagrams(input);
-    std.debug.print("len {d}", .{out_len});
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+
+    defer {
+        const leaked = gpa.deinit();
+        std.debug.assert(leaked == .ok);
+    }
+
+    std.debug.print("input {any}\n", .{input_vec});
+    try groupAnagrams(allocator, input_vec);
 }
 
 // groupAnagrams groups anagrams by sorting each string's characters.
@@ -26,33 +38,39 @@ pub fn main() !void {
 //
 // Time Complexity: O(n * k log k), where n is number of strings, k is average string length
 // Space Complexity: O(nk) for storing the map and result slices
-pub fn groupAnagrams(input: anytype) !usize {
-    for (input) |element| {
-        std.debug.print("element {s}\n", .{element});
-        //std.sort.block([]const u8, element, {}, std.sort.asc(u8));
-    }
-    return 0;
-}
+pub fn groupAnagrams(allocator: std.mem.Allocator, input: []const u8) !void {
+    const List = std.ArrayList([]const u8);
+    var resultMap =
+        std.array_hash_map.StringArrayHashMap(List).init(allocator);
+    defer resultMap.deinit();
 
-// compareChars checks if two  strings are anagrams by comparing their character counts.
-// It uses a hash map to track character frequencies.
-//
-// Time Complexity: O(k), where k is the length of the strings
-// Space Complexity: O(1) since character set is fixed
-pub fn compareChars(s: []const u8, t: []const u8) !bool {
-    var count: [256]i8 = .{0} ** 256;
+    var it = std.mem.splitScalar(u8, input[0..], '\n');
+    while (it.next()) |element| {
+        const sorted = try allocator.alloc(u8, element.len);
+        // don't forget to free sorted
+        @memcpy(sorted, element);
+        std.sort.block(u8, sorted, {}, std.sort.asc(u8));
 
-    for (s) |ch| {
-        count[ch] += 1;
-    }
-    for (t) |ch| {
-        if (count[ch] == 0) {
-            return false;
+        const anagram = try resultMap.getOrPut(sorted);
+        if (anagram.found_existing) {
+            allocator.free(sorted);
+            try anagram.value_ptr.*.append(allocator, element);
+        } else {
+            anagram.value_ptr.* = try List.initCapacity(allocator, 0);
+            try anagram.value_ptr.*.append(allocator, element);
         }
-        count[ch] -= 1;
     }
-    for (count) |ch| {
-        if (ch != 0) return false;
+    var it_map = resultMap.iterator();
+    while (it_map.next()) |elem| {
+        var list = elem.value_ptr.*;
+        const key = elem.key_ptr.*;
+        {
+            std.debug.print("\nGroup:\n", .{});
+            for (list.items) |word| {
+                std.debug.print(" {s}", .{word});
+            }
+            defer list.deinit(allocator);
+            defer allocator.free(key);
+        }
     }
-    return true;
 }
