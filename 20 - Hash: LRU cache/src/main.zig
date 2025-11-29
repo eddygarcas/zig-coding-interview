@@ -27,6 +27,15 @@ fn LRUCache() type {
             };
         }
 
+        // Put inserts or updates a key-value pair in the cache.
+        // If the key already exists, it updates the value and marks the entry as most recently used.
+        // If the key doesn't exist and the cache is at capacity, it evicts the least recently used entry.
+        //
+        // Parameters:
+        //   - key: The key to store
+        //   - value: The value to associate with the key
+        //
+        // Time Complexity: O(1)
         pub fn put(self: *Self, key: u32, value: i32) !void {
             // If key exists, update its value and move it to front (most recently used)
             if (self.items.get(key)) |elem| {
@@ -55,15 +64,29 @@ fn LRUCache() type {
             }
         }
 
+        // Get retrieves the value for a given key and marks it as most recently used.
+        // Returns the value and true if found; 0 and false otherwise.
+        //
+        // Parameters:
+        //   - key: The key to look up
+        //
+        // Returns:
+        //   - value: The value associated with the key (0 if not found)
+        //
+        // Time Complexity: O(1)
+        pub fn get(self: *Self, key: u32) !i32 {
+            const node = self.items.get(key) orelse return error.EntryNotFound;
+
+            self.cache.prepend(&node.*.node);
+            return node.*.value;
+        }
+
         pub fn deinit(self: *Self) void {
             var it = self.items.valueIterator();
             while (it.next()) |v| {
                 self.allocator.destroy(v.*);
             }
             self.items.deinit();
-        }
-        pub fn is_init(self: *Self) bool {
-            return self.cache.len() == 0;
         }
     };
 }
@@ -82,12 +105,16 @@ pub fn main() !void {
 
     var cache = LRUCache().init(allocator, 4);
     defer cache.deinit();
-    std.debug.assert(cache.is_init());
     try cache.put(1, 1);
     try cache.put(1, 2);
     try cache.put(2, 2);
     try cache.put(3, 3);
     try cache.put(4, 4);
     try cache.put(5, 5);
-    std.debug.print("Cache {any}\n", .{cache.cache});
+    const get_val = try cache.get(3);
+    std.debug.print("Element at 3 is {d}\n", .{get_val});
+
+    _ = cache.get(9) catch |err| {
+        std.debug.print("Getting key 9 gets this error {s}\n", .{@errorName(err)});
+    };
 }
