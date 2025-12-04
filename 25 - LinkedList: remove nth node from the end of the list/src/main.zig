@@ -1,27 +1,125 @@
 const std = @import("std");
-const _25___LinkedList_remove_nth_node = @import("_25___LinkedList_remove_nth_node");
+
+const Entry = struct {
+    value: usize = 0,
+    next: ?*Entry = null,
+    const Self = @This();
+
+    fn init(self: *Self, value: usize, next: ?*Entry) void {
+        self.value = value;
+        self.next = next;
+    }
+    // removeNthNode removes the nth node from the end of the singly linked list.
+    // This is a method on the ListNode type.
+    // Parameters:
+    // n: The position from the end (1-based index)
+    // Modifies the list in place. No return value.
+    pub fn removeNthNode(self: *Self, allocator: std.mem.Allocator, i: usize) !void {
+        // temp is used to count the total number of nodes in the list
+
+        var temp: ?*Entry = self;
+
+        var total: usize = 0;
+        // First pass: count the total number of nodes in the list
+        // Traverse the list to get the total count of nodes
+        while (temp) |elem| {
+            total += 1;
+            temp = elem.next;
+        }
+        std.debug.print("Capacity {d}\n", .{total});
+        if (i > total) {
+            return error.Nth_Element_Out_Of_Range;
+        }
+
+        const target_index = total - i;
+        // Second pass: move to the node just before the one to remove
+        // We subtract n+1 from the total count to get the position from the start
+        // Traverse the list to get to the node before the one to remove
+        var cur: *Entry = self;
+        for (0..(target_index - 1)) |_| {
+            cur = cur.next.?;
+        }
+        //         to_remove
+        //            |
+        //            v
+        // 1 → 2 → 3     5 → null
+        //          \   /
+        //           \ /
+        //            X   (4 is now isolated)
+
+        // Create a pointer to the node to remove
+        const to_remove = cur.next.?;
+
+        // By pass the cur.next node to point to the next node from to_remove
+        cur.next = to_remove.next;
+
+        // Just need to deallocate the node to remove
+        allocator.destroy(to_remove);
+    }
+};
 
 pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try _25___LinkedList_remove_nth_node.bufferedPrint();
-}
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+    defer {
+        const leaked = gpa.deinit();
+        std.debug.assert(leaked == .ok);
+    }
 
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
+    var sum1 = try allocator.create(Entry);
+    sum1.* = .{ .value = 1, .next = null };
+    const head1 = sum1;
+    defer destroyNodes(allocator, head1);
+
+    var node = try allocator.create(Entry);
+    node.init(2, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(3, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(4, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(5, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(6, null);
+    sum1.next = node;
+    sum1 = node;
+
+    head1.removeNthNode(allocator, 15) catch |err| {
+        std.debug.print("Error {s}\n", .{@errorName(err)});
     };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+
+    var put: ?*Entry = head1;
+    while (put) |elem| {
+        std.debug.print(" {d}", .{elem.value});
+        put = elem.next;
+    }
+}
+// Will destroy the nodes taking care of the fact that its a cycle list, and avoid double deallocate.
+fn destroyNodes(allocator: std.mem.Allocator, head: *Entry) void {
+    var visited = std.AutoHashMap(*Entry, void).init(allocator);
+    defer visited.deinit();
+
+    var cur: ?*Entry = head;
+    while (cur) |node| {
+        if (visited.contains(node)) break;
+        visited.put(node, {}) catch return;
+
+        const next = node.next;
+        allocator.destroy(node);
+
+        cur = next;
+    }
 }
