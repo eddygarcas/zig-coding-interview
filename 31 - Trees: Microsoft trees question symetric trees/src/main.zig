@@ -27,7 +27,7 @@ pub fn TreeMap(comptime V: type) type {
             var queue = try std.ArrayList(struct {
                 l: ?*TreeMap(V),
                 r: ?*TreeMap(V),
-            }).initCapacity(self.allocator, 0);
+            }).initCapacity(self.allocator, 5);
 
             defer queue.deinit(self.allocator);
 
@@ -59,7 +59,7 @@ pub fn TreeMap(comptime V: type) type {
         }
 
         // You can pass *TreeMap(V) or *Self will work either way
-        pub fn deinit(self: *Self) void {
+        pub fn deinit(self: *TreeMap(V)) void {
             if (self.left) |l| l.deinit();
             if (self.right) |r| r.deinit();
             self.allocator.destroy(self);
