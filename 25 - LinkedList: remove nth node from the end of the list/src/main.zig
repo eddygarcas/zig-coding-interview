@@ -123,19 +123,3 @@ pub fn main() !void {
         put = elem.next;
     }
 }
-// Will destroy the nodes taking care of the fact that its a cycle list, and avoid double deallocate.
-fn destroyNodes(allocator: std.mem.Allocator, head: *Entry) void {
-    var visited = std.AutoHashMap(*Entry, void).init(allocator);
-    defer visited.deinit();
-
-    var cur: ?*Entry = head;
-    while (cur) |node| {
-        if (visited.contains(node)) break;
-        visited.put(node, {}) catch return;
-
-        const next = node.next;
-        allocator.destroy(node);
-
-        cur = next;
-    }
-}
