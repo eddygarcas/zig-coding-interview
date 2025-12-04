@@ -1,27 +1,89 @@
 const std = @import("std");
-const _26___LinkedList_Odd_even_Linked = @import("_26___LinkedList_Odd_even_Linked");
+
+const Entry = struct {
+    value: usize = 0,
+    next: ?*Entry = null,
+    const Self = @This();
+
+    fn init(self: *Self, value: usize, next: ?*Entry) void {
+        self.value = value;
+        self.next = next;
+    }
+    // oddEvenList rearranges the list so that all odd-indexed nodes are grouped together
+    // followed by all even-indexed nodes. The operation is performed in-place.
+    // Example: 1->2->3->4->5 becomes 1->3->5->2->4
+    pub fn oddEvenList(self: *Self) void {
+        var odds = self;
+        var evens: ?*Entry = odds.next;
+        const evenList = evens;
+
+        while (evens) |even| {
+            odds.next = even.next;
+            odds = odds.next.?;
+
+            even.next = odds.next;
+            evens = even.next;
+        }
+        odds.next = evenList;
+    }
+
+    // Will destroy the nodes taking care of the fact that its a cycle list, and avoid double deallocate.
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        var visited = std.AutoHashMap(*Entry, void).init(allocator);
+        defer visited.deinit();
+
+        var cur: ?*Entry = self;
+        while (cur) |node| {
+            if (visited.contains(node)) break;
+            visited.put(node, {}) catch return;
+
+            const next = node.next;
+            allocator.destroy(node);
+
+            cur = next;
+        }
+    }
+};
 
 pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try _26___LinkedList_Odd_even_Linked.bufferedPrint();
-}
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+    defer {
+        const leaked = gpa.deinit();
+        std.debug.assert(leaked == .ok);
+    }
 
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+    var sum1 = try allocator.create(Entry);
+    sum1.* = .{ .value = 5, .next = null };
+    const head1 = sum1;
+    defer head1.deinit(allocator);
+
+    var node = try allocator.create(Entry);
+    node.init(2, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(1, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(3, null);
+    sum1.next = node;
+    sum1 = node;
+
+    node = try allocator.create(Entry);
+    node.init(4, null);
+    sum1.next = node;
+    sum1 = node;
+
+    head1.oddEvenList();
+
+    var put: ?*Entry = head1;
+    while (put) |elem| {
+        std.debug.print(" {d}", .{elem.value});
+        put = elem.next;
+    }
 }
