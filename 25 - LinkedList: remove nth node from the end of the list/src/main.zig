@@ -54,7 +54,23 @@ const Entry = struct {
         cur.next = to_remove.next;
 
         // Just need to deallocate the node to remove
-        allocator.destroy(to_remove);
+        to_remove.deinit(allocator);
+    }
+    // Will destroy the nodes taking care of the fact that its a cycle list, and avoid double deallocate.
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        var visited = std.AutoHashMap(*Entry, void).init(allocator);
+        defer visited.deinit();
+
+        var cur: ?*Entry = self;
+        while (cur) |node| {
+            if (visited.contains(node)) break;
+            visited.put(node, {}) catch return;
+
+            const next = node.next;
+            allocator.destroy(node);
+
+            cur = next;
+        }
     }
 };
 
@@ -70,7 +86,7 @@ pub fn main() !void {
     var sum1 = try allocator.create(Entry);
     sum1.* = .{ .value = 1, .next = null };
     const head1 = sum1;
-    defer destroyNodes(allocator, head1);
+    defer head1.deinit(allocator);
 
     var node = try allocator.create(Entry);
     node.init(2, null);
