@@ -93,5 +93,14 @@ pub fn main() !void {
     root.right.?.right = TreeMap(usize).init(allocator, 3);
 
     const result = try root.isSymetric();
+    const treeDrawing =
+        \\ Symmetric tree:
+        \\      1
+        \\    /   \
+        \\   2     2
+        \\  / \   / \
+        \\ 3   4 4   3
+    ;
+    std.debug.print("{s}\n", .{treeDrawing});
     std.debug.print("Tree is symetric? {}", .{result});
 }
