@@ -44,6 +44,59 @@ pub fn TreeMap(comptime V: type) type {
             return depth;
         }
 
+        // sumPath using queue checks if there exists a root-to-leaf path summing to target
+        // Returns true if such a path exists, false otherwise
+        pub fn sumPath(self: *Self, target: usize) !bool {
+            var queue = try std.ArrayList(struct {
+                node: ?*Self,
+                sum: usize,
+            }).initCapacity(self.allocator, 5);
+            defer queue.deinit(self.allocator);
+
+            try queue.append(self.allocator, .{
+                .node = self,
+                .sum = target,
+            });
+
+            while (queue.pop()) |elem| {
+                const node = elem.node;
+
+                if (node == null) {
+                    if (elem.sum == 0) return true;
+                    continue;
+                }
+
+                const sum = elem.sum - node.?.value;
+
+                try queue.append(self.allocator, .{
+                    .node = node.?.left,
+                    .sum = sum,
+                });
+
+                try queue.append(self.allocator, .{
+                    .node = node.?.right,
+                    .sum = sum,
+                });
+            }
+            return false;
+        }
+
+        // sumPathRec recursively checks if there exists a root-to-leaf path summing to target
+        // Returns true if such a path exists, false otherwise
+        pub fn sumPathRec(self: ?*Self, target: usize) bool {
+            if (self == null) return false;
+
+            const node = self.?;
+            const new_target = target - node.value;
+
+            // leaf
+            if (node.left == null and node.right == null)
+                return new_target == 0;
+
+            return sumPathRec(node.left, new_target) or
+                sumPathRec(node.right, new_target);
+        }
+
         // You can pass *TreeMap(V) or *Self will work either way
         pub fn deinit(self: *TreeMap(V)) void {
             if (self.left) |l| l.deinit();
@@ -55,16 +108,6 @@ pub fn TreeMap(comptime V: type) type {
 
 // main creates a sample binary tree and calculates its maximum depth
 pub fn main() !void {
-    // Create binary tree:
-    //        2
-    //      /   \
-    //     4     7
-    //          / \
-    //         12  15
-    //        /    /
-    //       20   18
-    //        \
-    //        21
     const treeDrawing =
         \\ Binary tree:
         \\        2
@@ -75,7 +118,7 @@ pub fn main() !void {
         \\        /    /
         \\       20   18
         \\        \
-        \\        21
+        \\        28
     ;
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -102,9 +145,14 @@ pub fn main() !void {
     root.right.?.right.?.left = TreeMap(usize).init(allocator, 18);
 
     // level 4
-    root.right.?.left.?.left.?.right = TreeMap(usize).init(allocator, 21);
+    root.right.?.left.?.left.?.right = TreeMap(usize).init(allocator, 28);
 
     const result = try root.depthOfBinaryTree();
     std.debug.print("{s}\n", .{treeDrawing});
     std.debug.print("Depth of binary tree: {d}\n", .{result});
+
+    const sumpath = try root.sumPath(69);
+    std.debug.print("Sum path: {}\n", .{sumpath});
+    const sumpathRec = root.sumPathRec(69);
+    std.debug.print("Sum path recursively: {}\n", .{sumpathRec});
 }
