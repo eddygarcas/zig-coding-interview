@@ -36,26 +36,30 @@ pub fn TreeMap(comptime V: type) type {
                 .r = self.right,
             });
 
-            while (queue.pop()) |pair| {
-                const l = pair.l;
-                const r = pair.r;
+            const result = blk: {
+                while (queue.pop()) |pair| {
+                    const l = pair.l;
+                    const r = pair.r;
 
-                if (l == null and r == null) continue;
-                if (l == null or r == null) return false;
+                    if (l == null and r == null) continue;
+                    if (l == null or r == null) break :blk false;
+                    if (l.?.value != r.?.value) break :blk false;
 
-                if (l.?.value != r.?.value) return false;
+                    // Basically to avoid the recursive call we need to replace the actuall call for
+                    // adding same params in the Queue. No need to change previous conditions.
+                    try queue.append(self.allocator, .{
+                        .l = l.?.left,
+                        .r = r.?.right,
+                    });
 
-                try queue.append(self.allocator, .{
-                    .l = l.?.left,
-                    .r = r.?.right,
-                });
-
-                try queue.append(self.allocator, .{
-                    .l = l.?.right,
-                    .r = r.?.left,
-                });
-            }
-            return true;
+                    try queue.append(self.allocator, .{
+                        .l = l.?.right,
+                        .r = r.?.left,
+                    });
+                }
+                break :blk true;
+            };
+            return result;
         }
 
         // You can pass *TreeMap(V) or *Self will work either way
