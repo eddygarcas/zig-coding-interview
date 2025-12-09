@@ -81,6 +81,30 @@ pub fn TreeMap(comptime V: type) type {
             return false;
         }
 
+        // This program finds the lowest common ancestor (LCA) of two nodes in a binary tree.
+        // The LCA is the lowest node in the tree that has both nodes as descendants.
+        // It uses a recursive depth-first search approach, we won't use queue/stack apporach as in this case
+        // it's worst in terms of performance.
+        // lcanode finds the lowest common ancestor of two nodes with values p and q in the binary tree
+        // Returns the LCA node if found, nil otherwise
+        // Uses post-order traversal where:
+        // - If current node matches either value, return it
+        // - Recursively search left and right subtrees
+        // - If both subtrees return non-nil, current node is LCA
+        // - If one subtree returns nil, return the non-nil subtree result
+        pub fn lcanode(self: ?*Self, p: usize, q: usize) ?*Self {
+            if (self == null) return null;
+
+            if (self.?.value == p or self.?.value == q) return self;
+
+            const left: ?*Self = if (self.?.left) |node| node.lcanode(p, q) else null;
+            const right: ?*Self = if (self.?.right) |node| node.lcanode(p, q) else null;
+
+            if (left != null and right != null) return self;
+            if (left != null) return left;
+            return right;
+        }
+
         // sumPathRec recursively checks if there exists a root-to-leaf path summing to target
         // Returns true if such a path exists, false otherwise
         pub fn sumPathRec(self: ?*Self, target: usize) bool {
@@ -109,7 +133,6 @@ pub fn TreeMap(comptime V: type) type {
 // main creates a sample binary tree and calculates its maximum depth
 pub fn main() !void {
     const treeDrawing =
-        \\ Binary tree:
         \\        2
         \\      /   \
         \\     4     7
@@ -148,11 +171,14 @@ pub fn main() !void {
     root.right.?.left.?.left.?.right = TreeMap(usize).init(allocator, 28);
 
     const result = try root.depthOfBinaryTree();
-    std.debug.print("{s}\n", .{treeDrawing});
-    std.debug.print("Depth of binary tree: {d}\n", .{result});
 
     const sumpath = try root.sumPath(69);
-    std.debug.print("Sum path: {}\n", .{sumpath});
     const sumpathRec = root.sumPathRec(69);
-    std.debug.print("Sum path recursively: {}\n", .{sumpathRec});
+    std.debug.print("🌳 Binary Tree:\n{s}\n", .{treeDrawing});
+    std.debug.print("📐 Depth:              {d}\n", .{result});
+    std.debug.print("🧮 Sum path (iter):    {any}\n", .{sumpath});
+    std.debug.print("🔁 Sum path (rec):     {any}\n", .{sumpathRec});
+
+    const lcavalue = root.lcanode(28, 4);
+    std.debug.print("⚙️ LCA of 28 and 4 is: {d}\n", .{lcavalue.?.value});
 }
