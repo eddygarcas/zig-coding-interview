@@ -105,6 +105,47 @@ pub fn TreeMap(comptime V: type) type {
             return right;
         }
 
+        // This program finds the kth smallest element in a Binary Search Tree (BST).
+        // It uses an in-order traversal approach since BST in-order traversal gives elements in ascending order.
+        // The algorithm maintains a counter that decrements with each node visited until reaching the kth element.
+        //
+        // For example, given this BST:
+        //                          130
+        //                /                   \
+        //              70                    190
+        //           /      \              /       \
+        //         40       100          160        220
+        //       /    \    /    \      /    \     /    \
+        //     20     55  80    110  140    170  200   240
+        //    /  \        \      \     \      \    \   /  \
+        //   5   15       90     120   150    180  210 230 250
+        //
+        // And k=7, the program will return 80 (the 7th smallest element)
+        //
+        // Time Complexity: O(n) where n is number of nodes
+        // Space Complexity: O(h) where h is height of tree due to recursion stack
+        //
+        // smallestElement performs an in-order traversal to find the kth smallest element
+        // Parameters:
+        //   - root: pointer to current node in traversal
+        //   - k: pointer to remaining count until kth element is found
+        //
+        // The method stores result in the receiver's ans field when k reaches 0
+        pub fn smallestElement(self: ?*Self, count: *i8, smallest: *usize) void {
+            const node = self orelse null;
+            if (self == null) return;
+
+            if (node.?.left) |left| left.smallestElement(count, smallest);
+
+            count.* -= 1;
+            if (count.* == 0) {
+                smallest.* = node.?.value;
+                return;
+            }
+
+            if (node.?.right) |right| right.smallestElement(count, smallest);
+        }
+
         // sumPathRec recursively checks if there exists a root-to-leaf path summing to target
         // Returns true if such a path exists, false otherwise
         pub fn sumPathRec(self: ?*Self, target: usize) bool {
@@ -179,6 +220,87 @@ pub fn main() !void {
     std.debug.print("🧮 Sum path (iter):    {any}\n", .{sumpath});
     std.debug.print("🔁 Sum path (rec):     {any}\n", .{sumpathRec});
 
-    const lcavalue = root.lcanode(28, 4);
-    std.debug.print("⚙️ LCA of 28 and 4 is: {d}\n", .{lcavalue.?.value});
+    const lcavalue = root.lcanode(28, 18);
+    std.debug.print("⚙️ LCA of 28 and 18 is: {d}\n", .{lcavalue.?.value});
+
+    var rootBST = TreeMap(usize).init(allocator, 130);
+    defer rootBST.deinit();
+
+    // Level 1
+    rootBST.left = TreeMap(usize).init(allocator, 70);
+    rootBST.right = TreeMap(usize).init(allocator, 190);
+
+    // Level 2
+    rootBST.left.?.left = TreeMap(usize).init(allocator, 40);
+    rootBST.left.?.right = TreeMap(usize).init(allocator, 100);
+
+    rootBST.right.?.left = TreeMap(usize).init(allocator, 160);
+    rootBST.right.?.right = TreeMap(usize).init(allocator, 220);
+
+    // Level 3 (40 subtree)
+    rootBST.left.?.left.?.left = TreeMap(usize).init(allocator, 20);
+    rootBST.left.?.left.?.right = TreeMap(usize).init(allocator, 55);
+
+    // Level 3 (100 subtree)
+    rootBST.left.?.right.?.left = TreeMap(usize).init(allocator, 80);
+    rootBST.left.?.right.?.right = TreeMap(usize).init(allocator, 110);
+
+    // Level 3 (160 subtree)
+    rootBST.right.?.left.?.left = TreeMap(usize).init(allocator, 140);
+    rootBST.right.?.left.?.right = TreeMap(usize).init(allocator, 170);
+
+    // Level 3 (220 subtree)
+    rootBST.right.?.right.?.left = TreeMap(usize).init(allocator, 200);
+    rootBST.right.?.right.?.right = TreeMap(usize).init(allocator, 240);
+
+    // Level 4 (20 subtree)
+    rootBST.left.?.left.?.left.?.left = TreeMap(usize).init(allocator, 5);
+    rootBST.left.?.left.?.left.?.right = TreeMap(usize).init(allocator, 15);
+
+    // Level 4 (80 subtree)
+    rootBST.left.?.right.?.left.?.right = TreeMap(usize).init(allocator, 90);
+
+    // Level 4 (110 subtree)
+    rootBST.left.?.right.?.right.?.right = TreeMap(usize).init(allocator, 120);
+
+    // Level 4 (140 subtree)
+    rootBST.right.?.left.?.left.?.right = TreeMap(usize).init(allocator, 150);
+
+    // Level 4 (170 subtree)
+    rootBST.right.?.left.?.right.?.right = TreeMap(usize).init(allocator, 180);
+
+    // Level 4 (200 subtree)
+    rootBST.right.?.right.?.left.?.right = TreeMap(usize).init(allocator, 210);
+
+    // Level 4 (240 subtree)
+    rootBST.right.?.right.?.right.?.left = TreeMap(usize).init(allocator, 230);
+    rootBST.right.?.right.?.right.?.right = TreeMap(usize).init(allocator, 250);
+
+    var count: i8 = 7;
+    var smllel: usize = 0;
+    rootBST.smallestElement(&count, &smllel);
+
+    const CY = "\x1b[36m"; // cyan
+    const YY = "\x1b[33m"; // yellow
+    const RST = "\x1b[0m";
+
+    const bst_tree =
+        \\    
+        \\🌳 Given this BST Tree:
+        \\
+        \\                 --------{s}130{s}--------
+        \\                /                   \
+        \\              {s}70{s}                    190
+        \\           /      \              /       \
+        \\         {s}40{s}       100          160        220
+        \\       /    \    /    \      /    \     /    \
+        \\     {s}20{s}     55  {s}80{s}    110  140    170  200   240
+        \\    /  \          \    \     \      \    \   /  \
+        \\   5   15         90   120   150    180  210 230 250
+        \\
+    ;
+
+    std.debug.print(bst_tree, .{ CY, RST, CY, RST, CY, RST, CY, RST, YY, RST });
+
+    std.debug.print("⚙️ Smallest value is:  {any}\n", .{smllel});
 }
