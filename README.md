@@ -1,142 +1,138 @@
 # Zig Coding Interview Challenges
 
-A comprehensive collection of coding interview problems implemented in Zig, covering essential algorithms and data structures commonly encountered in technical interviews.
+A collection of coding interview challenges implemented in Zig. Each folder contains one or more solutions to a classic problem, often with multiple approaches in the same file (for example, naive vs optimized, hash map vs Boyer–Moore, or runtime vs `comptime` versions).
 
-## 🎯 Overview
+The goal of this project is to practice algorithms and data structures while learning how to write and structure real Zig programs. Many challenges are used to compare different techniques side by side.
 
-This repository contains **18 coding challenges** organized by problem category, each implemented with clean, well-documented Zig code. The solutions demonstrate various algorithmic approaches, optimization techniques, and Zig-specific features like `comptime` evaluation.
+## Overview
 
-## 📁 Project Structure
+- **Language:** Zig
+- **Focus:** Coding interview–style problems (LeetCode / big‑tech style)
+- **Coverage:** Arrays, math / bitwise, hash maps, linked lists, trees, and more
+- **Style:** Small, focused programs; many compare different approaches (e.g. hash map vs Boyer–Moore, brute force vs optimized, comptime use, etc.).
 
-Each challenge is organized in its own directory with the following structure:
+## Repository Structure
+
+At the top level, each directory is one challenge (or a closely related set of variants for a single problem):
+
+```text
+2 - Arrays: Container most water/
+3 - Arrays: Valid mountain array/
+...
+32 - Trees: Google mas depth of binary tree/
+README.md
 ```
-challenge-name/
+
+Inside a challenge directory:
+
+```text
+<n> - <Category>: <Title>/
 ├── src/
-│   └── main.zig          # Main implementation
-├── build.zig             # Build configuration
-└── build.zig.zon         # Package configuration
+│   └── main.zig      # Main implementation file
+├── build.zig         # Zig build definition
+└── build.zig.zon     # Package metadata
 ```
 
-## 🧮 Challenge Categories
+Most problems are implemented entirely in `src/main.zig`. A single file will often contain:
 
-### Arrays & Two Pointers
-- **[2 - Container Most Water](./2%20-%20Arrays:%20Container%20most%20water/)** - Two-pointer technique for maximum area calculation
-- **[3 - Valid Mountain Array](./3%20-%20Arrays:%20Valid%20mountain%20array/)** - Array validation with specific patterns
-- **[4 - Boats to Save People](./4%20-%20Arrays:%20Boats%20to%20save%20people/)** - Greedy algorithm with two pointers
-- **[5 - Move Zeros](./5%20-%20Arrays:%20Move%20zeros/)** - In-place array manipulation
-- **[6 - Longest Substring](./6%20-%20Arrays:%20longest%20substring/)** - Sliding window technique
-- **[7 - First and Last Position](./7%20-%20Arrays:%20First%20and%20last%20position/)** - Binary search implementation
-- **[8 - First Bad Version](./8%20-%20Arrays:%20First%20bad%20version/)** - Binary search optimization
+- the main solution function(s)
+- one or more alternative solutions (for comparison)
+- small helper types (structs, enums) and utilities
+- `test` blocks that exercise the implementation
 
-### Mathematics & Bit Manipulation
-- **[9 - Missing Number (Gauss Formula)](./9%20-%20Math:%20Gauss%20formula%20Missing%20number/)** - Mathematical approach using sum formula
-- **[10 - Sieve of Eratosthenes](./10%20-%20Math:%20Sieve%20of%20Eratosthenes,%20count%20primes,%20comptime/)** - Prime number generation with `comptime`
-- **[11 - XOR Single Numbers](./11%20-%20Math:%20XOR%20Bitwise,%20single%20numbers/)** - Bitwise operations for finding unique elements
-- **[12 - Robot Return to Origin](./12%20-%20Math:%20robot%20return%20to%20origin/)** - Coordinate tracking and validation
-- **[13 - Binary Sum](./13%20-%20Math:%20Binary%20sum/)** - Binary arithmetic operations
+## Challenge Categories
 
-### Hash Tables & Hash Maps
-- **[14 - Two Sum](./14%20-%20Hash:%20two%20sum/)** - Classic hash map problem with O(n) solution
-- **[15 - Contains Duplicates](./15%20-%20Hash:%20contains%20duplicates/)** - Duplicate detection using hash sets
-- **[17 - 4Sum II](./17%20-%20Hash:%204sum2/)** - Advanced hash map usage for multi-array problems
-- **[18 - Minimum Window Substring (Hard)](./18%20-%20Hash:%20Minimum%20window%20substring%20(hard)/)** - Complex sliding window with hash maps
+Below is a quick map of the current problems. Names are taken directly from the folders so you can copy–paste them into your shell.
 
-### Advanced Algorithms
-- **[16 - Boyer-Moore Majority Element](./16%20-%20Boyer-Moore,%20Majority%20element%20problem/)** - Voting algorithm implementation
+### Arrays / Two Pointers / Sliding Window
 
-## 🚀 Getting Started
+- **2 - Arrays: Container most water** – two‑pointer maximum area
+- **3 - Arrays: Valid mountain array** – array shape validation
+- **4 - Arrays: Boats to save people** – greedy + two pointers
+- **5 - Arrays: Move zeros** – in‑place reordering
+- **6 - Arrays: longest substring** – sliding window
+- **7 - Arrays: First and last position** – binary search variants
+- **8 - Arrays: First bad version** – search over monotone predicate
 
-### Prerequisites
-- [Zig](https://ziglang.org/) (version 0.11.0 or later)
+### Math, Bitwise, Number Theory
 
-### Running a Challenge
+- **9 - Math: Gauss formula Missing number** – missing value via sum formula
+- **10 - Math: Sieve of Eratosthenes, count primes, comptime** – prime counting with `comptime`
+- **11 - Math: XOR Bitwise, single numbers** – using XOR to isolate unique elements
+- **12 - Math: robot return to origin** – coordinate accumulation
+- **13 - Math: Binary sum** – binary addition
 
-Navigate to any challenge directory and run:
+### Hash / Maps / Sets
 
-```bash
-# Build and run
-zig build run
+- **14 - Hash: two sum** – classic two‑sum with a hash map
+- **15 - Hash: contains duplicates** – duplicate detection with a set
+- **17 - Hash: 4sum2** – counting zero‑sum 4‑tuples using hash maps
+- **18 - Hash: Minimum window substring (hard)** – sliding window + hash counts
+- **19 - Hash: Group anagrams** – grouping strings by signature
+- **20 - Hash: LRU cache** – cache with eviction policy
 
-# Run tests
-zig build test
+### Majority / Voting Algorithms
 
-# Build only
-zig build
-```
+- **16 - Boyer-Moore, Majority element problem** – hash‑map solution and Boyer–Moore voting
 
-### Example Usage
+### Linked Lists
+
+- **21 - LinkedList Apple linked list** – Apple‑style linked list question
+- **22 - Linkedlist: Amazon linked list cycle** – cycle detection
+- **23 - LinkedList: Microsoft reverse link list** – reversing a list
+- **24 - LinkedList: Adobe linked list add two numbers** – addition via linked lists
+- **25 - LinkedList: remove nth node from the end of the list** – two‑pointer removal
+- **26 - LinkedList: Odd even LinkedList** – reordering by position
+
+### Trees
+
+- **31 - Trees: Microsoft trees question symetric trees** – symmetric tree check
+- **32 - Trees: Google mas depth of binary tree** – maximum depth of a binary tree
+
+There are more problems planned; new folders will follow the same naming pattern.
+
+## How to Run a Challenge
+
+From the repository root, change into the directory you want and use Zig’s build system. Each challenge has its own `build.zig`, so you always run commands from inside the challenge folder:
 
 ```bash
 cd "14 - Hash: two sum"
+
+# Build and run the example
 zig build run
+
+# Run tests (when defined for that challenge)
+zig build test
 ```
 
-Expected output:
-```
-Positions 1 and 2
-```
+This layout is repeated across all folders, so you can substitute any other challenge directory. When a file contains multiple solution variants, the `main` entry point usually selects one of them or runs a small comparison.
 
-## 🔧 Key Zig Features Demonstrated
+## What You Can Learn Here
 
-- **Memory Management**: Arena allocators, manual memory management
-- **Comptime Evaluation**: Compile-time computations for performance
-- **Error Handling**: Zig's explicit error handling with `try` and `!`
-- **Type System**: Strong typing with type inference
-- **Performance**: Zero-cost abstractions and manual optimizations
-- **Hash Maps**: `std.hash_map.AutoHashMap` usage patterns
-- **Slices vs Arrays**: Different approaches to data handling
+- **Core interview patterns**
+  - Two pointers
+  - Sliding window
+  - Binary search (including variants for first/last position)
+  - Hash‑based counting and lookup
+- **Zig concepts in practice**
+  - Using the standard library (`std`) effectively
+  - Allocators (e.g. `std.heap.ArenaAllocator`) and manual memory management
+  - `comptime` for compile‑time work
+  - Error handling with `!` and `try`
 
-## 📊 Complexity Analysis
+You can treat each folder as a small, focused Zig learning exercise.
 
-Each solution includes:
-- **Time Complexity**: Big O notation for runtime performance
-- **Space Complexity**: Memory usage analysis
-- **Alternative Approaches**: Multiple solution strategies where applicable
+## Contributing / Extending
 
-## 🎓 Learning Objectives
+You can extend this repo by:
 
-This collection helps you master:
+- Adding new challenge folders following the existing naming scheme
+- Providing alternative solutions (e.g. different time/space trade‑offs)
+- Adding more tests inside existing `main.zig` files or splitting code into small helper modules
 
-1. **Algorithm Design Patterns**
-   - Two pointers technique
-   - Sliding window
-   - Binary search
-   - Hash table optimization
+No strict style rules are enforced, but keeping code small, clear, and idiomatic to Zig is preferred.
 
-2. **Zig Programming Concepts**
-   - Memory allocators
-   - Comptime evaluation
-   - Error handling
-   - Performance optimization
+## License
 
-3. **Interview Preparation**
-   - Common problem patterns
-   - Optimization techniques
-   - Code organization
-   - Testing strategies
+Unless specified otherwise, this project is intended as an open educational resource. If you plan to redistribute or use it in another project, consider adding an explicit license file that matches your needs (for example MIT or Apache‑2.0).
 
-## 🤝 Contributing
-
-Feel free to:
-- Add new challenges
-- Improve existing solutions
-- Add alternative implementations
-- Enhance documentation
-- Report issues or bugs
-
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🔗 Resources
-
-- [Zig Language Reference](https://ziglang.org/documentation/master/)
-- [Zig Standard Library](https://ziglang.org/documentation/master/std/)
-- [LeetCode](https://leetcode.com/) - Source of many challenge problems
-- [Zig Learning Resources](https://github.com/ziglang/zig/wiki/Learning-Resources)
-
----
-
-**Happy Coding!** 🎉
-
-*Each challenge is self-contained and can be studied independently. Start with the category that interests you most or follow the numerical order for a structured learning path.*
