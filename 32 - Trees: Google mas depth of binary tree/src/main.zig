@@ -162,6 +162,28 @@ pub fn TreeMap(comptime V: type) type {
                 sumPathRec(node.right, new_target);
         }
 
+        // This program implements binary tree serialization and deserialization.
+        // It converts a binary tree to a string format and back, using a preorder traversal approach.
+        // 'X' is used to denote null nodes, and '#' is used as a delimiter between nodes.
+
+        // serialize converts the binary tree to a string representation
+        // using preorder traversal (root-left-right)
+        // Each node's value is followed by '#' and null nodes are represented as 'X#'
+        pub fn serialize(self: ?*Self, word: *std.ArrayList(u8)) !void {
+            if (self == null) try word.appendSlice(self.?.allocator, "X#");
+
+            const num = try std.fmt.allocPrint(self.?.allocator, "{d}#", .{self.?.value});
+            defer self.?.allocator.free(num);
+            try word.appendSlice(self.?.allocator, num);
+
+            if (self.?.left) |left| try left.serialize(word) else try word.appendSlice(self.?.allocator, "X#");
+            if (self.?.right) |right| try right.serialize(word) else try word.appendSlice(self.?.allocator, "X#");
+        }
+
+        // deserialize reconstructs a binary tree from its serialized byte representation
+        // Returns the reconstructed tree node and remaining serialized data
+        //pub fn deserialize(self: ?*Self, word: []u8) []u8 {}
+
         // You can pass *TreeMap(V) or *Self will work either way
         pub fn deinit(self: *TreeMap(V)) void {
             if (self.left) |l| l.deinit();
@@ -219,6 +241,11 @@ pub fn main() !void {
     std.debug.print("📐 Depth:              {d}\n", .{result});
     std.debug.print("🧮 Sum path (iter):    {any}\n", .{sumpath});
     std.debug.print("🔁 Sum path (rec):     {any}\n", .{sumpathRec});
+
+    var word = try std.ArrayList(u8).initCapacity(allocator, 5);
+    defer word.deinit(allocator);
+    try root.serialize(&word);
+    std.debug.print("-> Serialized tree:    {s}\n", .{word.items});
 
     const lcavalue = root.lcanode(28, 18);
     std.debug.print("⚙️ LCA of 28 and 18 is: {d}\n", .{lcavalue.?.value});
