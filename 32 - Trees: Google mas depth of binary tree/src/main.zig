@@ -176,13 +176,78 @@ pub fn TreeMap(comptime V: type) type {
             defer self.?.allocator.free(num);
             try word.appendSlice(self.?.allocator, num);
 
-            if (self.?.left) |left| try left.serialize(word) else try word.appendSlice(self.?.allocator, "X#");
-            if (self.?.right) |right| try right.serialize(word) else try word.appendSlice(self.?.allocator, "X#");
+            if (self.?.left) |left| {
+                try left.serialize(word);
+            } else {
+                try word.appendSlice(self.?.allocator, "X#");
+            }
+
+            if (self.?.right) |right| {
+                try right.serialize(word);
+            } else {
+                try word.appendSlice(self.?.allocator, "X#");
+            }
         }
 
         // deserialize reconstructs a binary tree from its serialized byte representation
         // Returns the reconstructed tree node and remaining serialized data
-        //pub fn deserialize(self: ?*Self, word: []u8) []u8 {}
+        // Rather than use pointers on data, use an index to point to the next node to evaluate
+        // this way it's simplier than using pointers to data as it will require more dereferences.
+        pub fn deserialize(allocator: std.mem.Allocator, data: []const u8, index: *usize) !?*Self {
+            if (index.* >= data.len) return error.NoSerializedData;
+
+            const value = data[index.*];
+            index.* += 1;
+
+            if (value == 'X') {
+                return null;
+            }
+            // This is what happen here: value - '0' == 55 - 48 == 7
+            //const number: usize = value - '0';
+
+            // The alternative is this one, which is better if value has more than one digit
+            var buf = &[_]u8{value};
+            const conv: u8 = try std.fmt.parseInt(u8, buf[0..], 10);
+            //std.debug.print("Parse int value {d}", .{conv});
+
+            const node = TreeMap(usize).init(allocator, conv);
+
+            node.left = try deserialize(allocator, data, index);
+            node.right = try deserialize(allocator, data, index);
+            return node;
+        }
+
+        // Simple way to represent a tree data
+        pub fn printByLevel(root: ?*Self, allocator: std.mem.Allocator) !void {
+            if (root == null) return;
+
+            var queue = try std.ArrayList(?*Self).initCapacity(allocator, 5);
+            defer queue.deinit(allocator);
+
+            try queue.append(allocator, root);
+
+            var level: usize = 0;
+
+            while (queue.items.len > 0) {
+                const size = queue.items.len;
+                std.debug.print("      -> Level {d}: ", .{level});
+
+                for (0..size) |_| {
+                    const node = queue.orderedRemove(0);
+
+                    if (node) |n| {
+                        std.debug.print("{d} ", .{n.value});
+                        try queue.append(allocator, n.left);
+                        try queue.append(allocator, n.right);
+                    } else {
+                        std.debug.print("X ", .{});
+                    }
+                }
+
+                std.debug.print("\n", .{});
+                level += 1;
+            }
+        }
 
         // You can pass *TreeMap(V) or *Self will work either way
         pub fn deinit(self: *TreeMap(V)) void {
@@ -246,6 +311,16 @@ pub fn main() !void {
     defer word.deinit(allocator);
     try root.serialize(&word);
     std.debug.print("-> Serialized tree:    {s}\n", .{word.items});
+
+    const nodes: []const u8 = "12XX34XX5XX";
+
+    var idx: usize = 0;
+    const rootDefer = try TreeMap(usize).deserialize(allocator, nodes, &idx);
+    defer rootDefer.?.deinit();
+
+    std.debug.print("-> De-serialized:      {s}\n", .{nodes});
+    try rootDefer.?.printByLevel(allocator);
+    //std.debug.print("-> De-serialized tree: {any}\n", .{rootDefer});
 
     const lcavalue = root.lcanode(28, 18);
     std.debug.print("⚙️ LCA of 28 and 18 is: {d}\n", .{lcavalue.?.value});
@@ -322,12 +397,12 @@ pub fn main() !void {
         \\         {s}40{s}       100          160        220
         \\       /    \    /    \      /    \     /    \
         \\     {s}20{s}     55  {s}80{s}    110  140    170  200   240
-        \\    /  \          \    \     \      \    \   /  \
-        \\   5   15         90   120   150    180  210 230 250
+        \\    /  \          \     \    \      \    \   /  \
+        \\   5   15         90    120  150   180  210 230 250
         \\
     ;
 
     std.debug.print(bst_tree, .{ CY, RST, CY, RST, CY, RST, CY, RST, YY, RST });
 
-    std.debug.print("⚙️ Smallest value is:  {any}\n", .{smllel});
+    std.debug.print("⚙️ Smallest {d}th value:  {any}\n", .{ 7, smllel });
 }
