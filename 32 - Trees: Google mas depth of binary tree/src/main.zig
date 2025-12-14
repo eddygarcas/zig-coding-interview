@@ -313,7 +313,6 @@ pub fn main() !void {
     std.debug.print("-> Serialized tree:    {s}\n", .{word.items});
 
     const nodes: []const u8 = "12XX34XX5XX";
-
     var idx: usize = 0;
     const rootDefer = try TreeMap(usize).deserialize(allocator, nodes, &idx);
     defer rootDefer.?.deinit();
