@@ -1,5 +1,34 @@
 const std = @import("std");
 
+// This is a use-case for comptime polymorphism in Zig,
+// and you can absolutely collapse both functions into one single
+// deserialize by abstracting how you consume input.
+// In the first cursor will use an index to select the next index to check.
+const IndexCursor = struct {
+    data: []const u8,
+    index: *usize,
+
+    fn next(self: *IndexCursor) !u8 {
+        if (self.index.* >= self.data.len) return error.NoSerializedData;
+
+        const value = self.data[self.index.*];
+        self.index.* += 1;
+        return value;
+    }
+};
+
+// In this case slice cursor, will use a pointer to a string constant poiting to the next node in the
+// array of characters.
+const SliceCursor = struct {
+    data: *[]const u8,
+
+    fn next(self: *SliceCursor) !u8 {
+        const value = self.data.*[0];
+        self.data.* = self.data.*[1..];
+        return value;
+    }
+};
+
 pub fn TreeMap(comptime V: type) type {
     return struct {
         value: V,
@@ -190,14 +219,15 @@ pub fn TreeMap(comptime V: type) type {
         }
 
         // deserialize reconstructs a binary tree from its serialized byte representation
-        // Returns the reconstructed tree node and remaining serialized data
-        // Rather than use pointers on data, use an index to point to the next node to evaluate
-        // this way it's simplier than using pointers to data as it will require more dereferences.
-        pub fn deserialize(allocator: std.mem.Allocator, data: []const u8, index: *usize) !?*Self {
-            if (index.* >= data.len) return error.NoSerializedData;
-
-            const value = data[index.*];
-            index.* += 1;
+        // Returns the reconstructed tree node and remaining serialized data.
+        // We are going to use Zig polymorphism to use the same logic but getting the next node
+        // using diferent approach, one using an index and the other one moving the slice forward using
+        // pointers.
+        // We need to pass Cursor as comptime, otherwise the compailer won't be able to dermine which
+        // cusror logic use. Remember this decisions happen at compile time as in Zig, types are values
+        // at compile time.
+        pub fn deserialize(comptime Cursor: type, allocator: std.mem.Allocator, cursor: *Cursor) !?*Self {
+            const value = try cursor.next();
 
             if (value == 'X') {
                 return null;
@@ -212,28 +242,8 @@ pub fn TreeMap(comptime V: type) type {
 
             const node = TreeMap(usize).init(allocator, conv);
 
-            node.left = try deserialize(allocator, data, index);
-            node.right = try deserialize(allocator, data, index);
-            return node;
-        }
-
-        // deserializeSlice reconstructs a binary tree from its serilized byte representation.
-        // This time will use a pointer to a []const u8 to move the slice.
-        pub fn deserializeSlice(allocator: std.mem.Allocator, data: *[]const u8) !?*Self {
-            const value = data.*[0];
-            data.* = data.*[1..];
-
-            if (value == 'X') return null;
-
-            //const number = value - '0';
-
-            const val = &[_]u8{value};
-            const num: usize = try std.fmt.parseInt(u8, val[0..], 10);
-
-            const node = TreeMap(usize).init(allocator, num);
-
-            node.left = try deserializeSlice(allocator, data);
-            node.right = try deserializeSlice(allocator, data);
+            node.left = try deserialize(Cursor, allocator, cursor);
+            node.right = try deserialize(Cursor, allocator, cursor);
             return node;
         }
 
@@ -334,20 +344,25 @@ pub fn main() !void {
 
     const nodes: []const u8 = "12XX34XX5XX";
     var idx: usize = 0;
-    const rootDefer = try TreeMap(usize).deserialize(allocator, nodes, &idx);
+    var cursor = IndexCursor{
+        .data = nodes,
+        .index = &idx,
+    };
+
+    const rootDefer = try TreeMap(usize).deserialize(IndexCursor, allocator, &cursor);
     defer rootDefer.?.deinit();
 
-    std.debug.print("-> De-serialized:      {s}\n", .{nodes});
+    std.debug.print("-> De-serialized (c):  {s}\n", .{nodes});
     try rootDefer.?.printByLevel(allocator);
-    //std.debug.print("-> De-serialized tree: {any}\n", .{rootDefer});
 
     var nodes_slice: []const u8 = "12XX34XX5XX";
     const nodes_slice_ptr = &nodes_slice;
-    const deferSlice = try TreeMap(usize).deserializeSlice(allocator, nodes_slice_ptr);
+    var slicecursor = SliceCursor{ .data = nodes_slice_ptr };
+
+    const deferSlice = try TreeMap(usize).deserialize(SliceCursor, allocator, &slicecursor);
     defer deferSlice.?.deinit();
-    std.debug.print("-> deserializeSlice:      {s}\n", .{nodes});
+    std.debug.print("-> De-serialized (s):  {s}\n", .{nodes});
     try deferSlice.?.printByLevel(allocator);
-    //std.debug.print("-> De-serialized tree: {any}\n", .{rootDefer});
 
     const lcavalue = root.lcanode(28, 18);
     std.debug.print("⚙️ LCA of 28 and 18 is: {d}\n", .{lcavalue.?.value});
