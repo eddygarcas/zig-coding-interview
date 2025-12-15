@@ -217,6 +217,26 @@ pub fn TreeMap(comptime V: type) type {
             return node;
         }
 
+        // deserializeSlice reconstructs a binary tree from its serilized byte representation.
+        // This time will use a pointer to a []const u8 to move the slice.
+        pub fn deserializeSlice(allocator: std.mem.Allocator, data: *[]const u8) !?*Self {
+            const value = data.*[0];
+            data.* = data.*[1..];
+
+            if (value == 'X') return null;
+
+            //const number = value - '0';
+
+            const val = &[_]u8{value};
+            const num: usize = try std.fmt.parseInt(u8, val[0..], 10);
+
+            const node = TreeMap(usize).init(allocator, num);
+
+            node.left = try deserializeSlice(allocator, data);
+            node.right = try deserializeSlice(allocator, data);
+            return node;
+        }
+
         // Simple way to represent a tree data
         pub fn printByLevel(root: ?*Self, allocator: std.mem.Allocator) !void {
             if (root == null) return;
@@ -319,6 +339,14 @@ pub fn main() !void {
 
     std.debug.print("-> De-serialized:      {s}\n", .{nodes});
     try rootDefer.?.printByLevel(allocator);
+    //std.debug.print("-> De-serialized tree: {any}\n", .{rootDefer});
+
+    var nodes_slice: []const u8 = "12XX34XX5XX";
+    const nodes_slice_ptr = &nodes_slice;
+    const deferSlice = try TreeMap(usize).deserializeSlice(allocator, nodes_slice_ptr);
+    defer deferSlice.?.deinit();
+    std.debug.print("-> deserializeSlice:      {s}\n", .{nodes});
+    try deferSlice.?.printByLevel(allocator);
     //std.debug.print("-> De-serialized tree: {any}\n", .{rootDefer});
 
     const lcavalue = root.lcanode(28, 18);
