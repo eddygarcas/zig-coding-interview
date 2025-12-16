@@ -247,6 +247,26 @@ pub fn TreeMap(comptime V: type) type {
             return node;
         }
 
+        // getMaxPathSum calculates the maximum path sum in the binary tree recursively.
+        // For each node, it computes:
+        // 1. Maximum path sum including the node and at most one child (returned up)
+        // 2. Maximum path sum including the node and both children (updates global max)
+        // Returns the maximum path sum that can be extended by parent nodes
+        pub fn maxPathSum(self: ?*Self, result: *i32) i32 {
+            if (self == null) return 0;
+            const node: *Self = self.?;
+
+            const leftSum: i32 = if (node.left) |n| n.maxPathSum(result) else 0;
+            const rightSum: i32 = if (node.right) |n| n.maxPathSum(result) else 0;
+
+            const value: i32 = @intCast(node.value);
+
+            const maxSide = @max(value, value + @max(leftSum, rightSum));
+            const maxCurrent = @max(maxSide, value + leftSum + rightSum);
+            result.* = @max(result.*, maxCurrent);
+            return maxSide;
+        }
+
         // Simple way to represent a tree data
         pub fn printByLevel(root: ?*Self, allocator: std.mem.Allocator) !void {
             if (root == null) return;
@@ -290,6 +310,16 @@ pub fn TreeMap(comptime V: type) type {
 
 // main creates a sample binary tree and calculates its maximum depth
 pub fn main() !void {
+    const CY = "\x1b[36m"; // cyan
+    const YY = "\x1b[33m"; // yellow
+    const RST = "\x1b[0m";
+    //const BK = "\x1b[30m"; // black
+    //const RD = "\x1b[31m"; // red
+    const GR = "\x1b[32m"; // green
+    //const BL = "\x1b[34m"; // blue
+    //const MG = "\x1b[35m"; // magenta
+    //const WH = "\x1b[37m"; // white
+
     const treeDrawing =
         \\        2
         \\      /   \
@@ -365,7 +395,11 @@ pub fn main() !void {
     try deferSlice.?.printByLevel(allocator);
 
     const lcavalue = root.lcanode(28, 18);
-    std.debug.print("⚙️ LCA of 28 and 18 is: {d}\n", .{lcavalue.?.value});
+    std.debug.print("⚙️ LCA of 28 and 18 is: {s}{d}{s}\n", .{ GR, lcavalue.?.value, RST });
+
+    var maxPathSum: i32 = 0;
+    _ = root.maxPathSum(&maxPathSum);
+    std.debug.print("-> Max path sum is:     {s}{d}{s}\n", .{ GR, maxPathSum, RST });
 
     var rootBST = TreeMap(usize).init(allocator, 130);
     defer rootBST.deinit();
@@ -423,10 +457,6 @@ pub fn main() !void {
     var count: i8 = 7;
     var smllel: usize = 0;
     rootBST.smallestElement(&count, &smllel);
-
-    const CY = "\x1b[36m"; // cyan
-    const YY = "\x1b[33m"; // yellow
-    const RST = "\x1b[0m";
 
     const bst_tree =
         \\    
