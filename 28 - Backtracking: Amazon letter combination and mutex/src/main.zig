@@ -1,21 +1,57 @@
 const std = @import("std");
 
-const Digits = *const fn () []u32;
+const Digits = fn () []const u32;
 
 const PhoneText = struct {
     ans: std.ArrayList([]u8),
-    digitToString: std.hash_map.AutoHashMap(u32, []u8),
+    digitToString: std.hash_map.AutoHashMap(u32, []const u8),
+    allocator: std.mem.Allocator,
 
     const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator) Self {
+    pub fn init(allocator: std.mem.Allocator) !Self {
         return .{
             .ans = try std.ArrayList([]u8).initCapacity(allocator, 0),
-            .digitToString = try std.hash_map.AutoHashMap(u32, []u8).init(allocator),
+            .digitToString = std.hash_map.AutoHashMap(u32, []const u8).init(allocator),
+            .allocator = allocator,
         };
     }
 
-    pub fn letterCombination(self: PhoneText, allocator: std.mem.Allocator, digits: Digits, cur: []const u8, digitIndex: usize, isRoot: bool) !void {}
+    pub fn letterCombination(self: *Self, comptime digits: Digits, cur: []const u8, digitIndex: usize, isRoot: bool) !void {
+        if (digits().len == 0) return;
+
+        if (cur.len == digits().len) {
+            // This may work also:
+            // const copy = try allocator.alloc(u8, original.len);
+            //defer allocator.free(copy);
+            //@memcpy(copy, original);
+            const cur_dupe = try self.allocator.dupe(u8, cur);
+            std.debug.print("Adding cur: {s}\n", .{cur_dupe});
+            defer self.allocator.free(cur_dupe);
+            try self.ans.append(self.allocator, cur_dupe);
+            return;
+        }
+        const currentDigit = digits()[digitIndex];
+        std.debug.print("Current digit: {d}\n", .{currentDigit});
+
+        for (self.digitToString.get(currentDigit).?) |char| {
+            const s: [1]u8 = .{char};
+            std.debug.print("Char pressed: {s}\n", .{s});
+            const next: []const u8 = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ cur, s });
+            std.debug.print("Next cur: {s}\n", .{next});
+            if (isRoot and digitIndex == 0) {
+                try self.letterCombination(digits, next, digitIndex + 1, false);
+            } else {
+                try self.letterCombination(digits, next, digitIndex + 1, false);
+            }
+        }
+        return;
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.digitToString.deinit();
+        self.ans.deinit(self.allocator);
+    }
 };
 
 pub fn main() !void {
@@ -28,5 +64,27 @@ pub fn main() !void {
         std.debug.assert(leaked == .ok);
     }
 
-    const phonetest = PhoneText.init(allocator);
+    var phonetest = try PhoneText.init(allocator);
+    defer phonetest.deinit();
+
+    try phonetest.digitToString.put(2, "abc");
+    try phonetest.digitToString.put(3, "def");
+    try phonetest.digitToString.put(4, "ghi");
+    try phonetest.digitToString.put(5, "jkl");
+    try phonetest.digitToString.put(6, "mno");
+    try phonetest.digitToString.put(7, "pqrs");
+    try phonetest.digitToString.put(8, "tuv");
+    try phonetest.digitToString.put(9, "wxyz");
+
+    try phonetest.letterCombination(struct {
+        fn call() []const u32 {
+            return &[_]u32{ 2, 3, 4 };
+        }
+    }.call, "", 0, true);
+
+    //try phonetest.letterCombination(struct {
+    //    fn call() []const u32 {
+    //        return &[_]u32{ 3, 4, 5, 7, 8, 9, 2, 6 };
+    //    }
+    //}.call, "", 0, true);
 }
