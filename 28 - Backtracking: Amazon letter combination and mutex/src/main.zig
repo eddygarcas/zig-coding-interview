@@ -26,30 +26,30 @@ const PhoneText = struct {
             //defer allocator.free(copy);
             //@memcpy(copy, original);
             const cur_dupe = try self.allocator.dupe(u8, cur);
-            std.debug.print("Adding cur: {s}\n", .{cur_dupe});
-            defer self.allocator.free(cur_dupe);
+            //Do not fee here as you won't be able to print the result in main function.
+            //defer self.allocator.free(cur_dupe);
             try self.ans.append(self.allocator, cur_dupe);
             return;
         }
         const currentDigit = digits()[digitIndex];
-        std.debug.print("Current digit: {d}\n", .{currentDigit});
 
         for (self.digitToString.get(currentDigit).?) |char| {
             const s: [1]u8 = .{char};
-            std.debug.print("Char pressed: {s}\n", .{s});
             const next: []const u8 = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ cur, s });
-            std.debug.print("Next cur: {s}\n", .{next});
+            defer self.allocator.free(next);
             if (isRoot and digitIndex == 0) {
                 try self.letterCombination(digits, next, digitIndex + 1, false);
             } else {
                 try self.letterCombination(digits, next, digitIndex + 1, false);
             }
         }
-        return;
     }
 
     pub fn deinit(self: *Self) void {
         self.digitToString.deinit();
+        for (self.ans.items) |item| {
+            self.allocator.free(item);
+        }
         self.ans.deinit(self.allocator);
     }
 };
@@ -81,10 +81,8 @@ pub fn main() !void {
             return &[_]u32{ 2, 3, 4 };
         }
     }.call, "", 0, true);
-
-    //try phonetest.letterCombination(struct {
-    //    fn call() []const u32 {
-    //        return &[_]u32{ 3, 4, 5, 7, 8, 9, 2, 6 };
-    //    }
-    //}.call, "", 0, true);
+    const result = phonetest.ans.items;
+    for (result) |item| {
+        std.debug.print("{s} ", .{item});
+    }
 }
