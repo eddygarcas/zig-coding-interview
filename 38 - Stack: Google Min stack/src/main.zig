@@ -41,8 +41,8 @@ fn Stack(comptime T: type) type {
         pub fn pop(self: *Stack(T)) !T {
             if (self.lenght == 0) return error.NoElementsLeft;
 
-            const elem = self.items[self.lenght];
             self.lenght -= 1;
+            const elem = self.items[self.lenght];
             return elem.value;
         }
 
@@ -89,7 +89,7 @@ pub fn main() !void {
         std.debug.assert(leaked == .ok);
     }
 
-    var stack = try Stack(i32).init(allocator, 6);
+    var stack = try Stack(i32).init(allocator, 2);
     defer stack.deinit();
     try stack.push(5);
     try stack.push(30);
