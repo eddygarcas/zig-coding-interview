@@ -47,8 +47,11 @@ fn Stack(comptime T: type) type {
         }
 
         // The solution is pretty straight forward, for every new element will check whether or not this new element
-        // is less then the min stored on top of the stack. So eventually just returning the min values from the top
+        // is less than the 'min' stored on the top element of the stack. So eventually just returning the 'min' value from the top
         // element of the stack would give us the stack minimum element.
+        // Less efficient way would be go through the whole stack and compare to every element, which increase time complexity.
+        // Another solution would be sort the stack first and then get the min element but again in this case an axuiliary stack would be
+        // required to keep the original order, so not just intecreases the time complexity but also space.
         pub fn getMin(self: *Stack(T)) !T {
             var minElement: T = undefined;
 
