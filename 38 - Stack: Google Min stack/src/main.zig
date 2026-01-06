@@ -72,7 +72,7 @@ fn Stack(comptime T: type) type {
 
             const new_ptr = @intFromPtr(self.items.ptr);
             std.debug.print(
-                "grow: {d} -> {d}\n",
+                "grow: mem. {d} -> {d} cap.\n",
                 .{ new_ptr, self.items.len },
             );
         }
