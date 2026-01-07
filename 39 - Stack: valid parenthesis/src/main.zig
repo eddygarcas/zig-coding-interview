@@ -14,21 +14,19 @@ fn Stack(comptime T: type) type {
                 .match = std.AutoArrayHashMap(T, T).init(allocator),
             };
         }
-
-        pub fn pop(self: *Stack(T)) T {
-            const elem = self.items.pop().?;
-            std.debug.print("Element : {d}\n", .{elem});
-            return elem;
-        }
-
+        // isValid checks if the input sequence contains valid matching pairs
+        // Returns true if all elements match correctly according to the match map
+        // Basically gets the counterpart of the current character and later compares the next
+        // character with the one on top of the stack, if all of them checks then it's a valid string.
         pub fn isValid(self: *Stack(T), input: []const T) !bool {
             for (input) |byte| {
-                if (self.match.get(byte)) |e| {
-                    std.debug.print("Pushing {any}\n", .{e});
-                    try self.items.append(self.allocator, e);
+                if (self.match.get(byte)) |_| {
+                    std.debug.print("Pushing {c}\n", .{byte});
+                    try self.items.append(self.allocator, byte);
                 } else {
-                    std.debug.print("Popping {any}\n", .{byte});
-                    if (self.match.get(self.pop()) != byte) {
+                    std.debug.print("Popping {c}\n", .{byte});
+                    const item = self.items.pop().?;
+                    if (self.match.get(item) != byte) {
                         return false;
                     }
                 }
@@ -53,7 +51,7 @@ pub fn main() !void {
     }
 
     const input = &[_]u8{ '{', '(', '[', ']', ')', '}' };
-    std.debug.print("Input : {any}\n", .{input});
+    std.debug.print("Input : {s}\n", .{input});
     var stack = try Stack(u8).init(allocator);
     defer stack.deinit();
     try stack.match.put('(', ')');
