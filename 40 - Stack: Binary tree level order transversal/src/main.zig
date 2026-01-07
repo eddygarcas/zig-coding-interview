@@ -6,6 +6,8 @@ fn TreeNode(comptime T: type) type {
         value: T,
         left: ?*TreeNode(T) = null,
         right: ?*TreeNode(T) = null,
+        // In order to simplify the allocation process will define the result as part of the TreeNode struct.
+        result: std.ArrayList([]T),
         allocator: std.mem.Allocator,
 
         // Here you can see clearly how to allocate and return an owned pointer.
@@ -21,6 +23,7 @@ fn TreeNode(comptime T: type) type {
             n.* = .{
                 .allocator = allocator,
                 .value = value,
+                .result = try std.ArrayList([]T).initCapacity(allocator, 0),
             };
             return n;
         }
@@ -43,11 +46,11 @@ fn TreeNode(comptime T: type) type {
 
         // After BFS traversal, result will be: [[3], [9,20], [15,25]]
         pub fn levelOrder(self: *TreeNode(T)) !std.ArrayList([]T) {
-            var result = try std.ArrayList([]T).initCapacity(self.allocator, 2);
-            errdefer {
-                for (result.items) |lvl| self.allocator.free(lvl);
-                result.deinit(self.allocator);
-            }
+            //var result = try std.ArrayList([]T).initCapacity(self.allocator, 2);
+            //errdefer {
+            //    for (result.items) |lvl| self.allocator.free(lvl);
+            //    result.deinit(self.allocator);
+            //}
 
             var queue: std.ArrayList(*TreeNode(T)) = try std.ArrayList(*TreeNode(T)).initCapacity(self.allocator, 2);
             defer queue.deinit(self.allocator);
@@ -63,26 +66,23 @@ fn TreeNode(comptime T: type) type {
                     // As for BFS we want a FIFO queue rather than a LIFO will use the swapRemove() method
                     // that gets the element specified by an index and removes it.
                     const node = queue.swapRemove(0);
-                    std.debug.print("Node value: {d}\n", .{node.value});
                     try level.append(self.allocator, node.value);
                     if (node.left) |left| try queue.append(self.allocator, left);
                     if (node.right) |right| try queue.append(self.allocator, right);
                 }
                 std.debug.print("Level elements: {any}\n", .{level.items});
                 const level_copy = try self.allocator.dupe(T, level.items);
-                try result.append(self.allocator, level_copy);
+                try self.result.append(self.allocator, level_copy);
             }
 
-            return result;
+            return self.result;
         }
 
         pub fn deinit(self: *TreeNode(T)) void {
-            if (self.left) |left| {
-                left.deinit();
-            }
-            if (self.right) |right| {
-                right.deinit();
-            }
+            if (self.left) |left| left.deinit();
+            if (self.right) |right| right.deinit();
+            for (self.result.items) |lvl| self.allocator.free(lvl); // free each duped slice
+            self.result.deinit(self.allocator);
             self.allocator.destroy(self);
         }
     };
@@ -106,10 +106,6 @@ pub fn main() !void {
     treenode.right.?.left = try TreeNode(u32).init(allocator, 15);
     treenode.right.?.right = try TreeNode(u32).init(allocator, 25);
 
-    var result = try treenode.*.levelOrder();
-    defer {
-        for (result.items) |lvl| allocator.free(lvl); // free each duped slice
-        result.deinit(allocator);
-    }
+    const result = try treenode.*.levelOrder();
     std.debug.print("Result: {any}\n", .{result.items});
 }
