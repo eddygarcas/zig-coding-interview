@@ -78,6 +78,39 @@ fn TreeNode(comptime T: type) type {
             return self.result;
         }
 
+        pub fn levelOrderZigZag(self: *TreeNode(T)) !std.ArrayList([]T) {
+            var queue: std.ArrayList(*TreeNode(T)) = try std.ArrayList(*TreeNode(T)).initCapacity(self.allocator, 2);
+            defer queue.deinit(self.allocator);
+
+            try queue.append(self.allocator, self);
+
+            var levelIndex: usize = 1;
+
+            while (queue.items.len > 0) : (levelIndex += 1) {
+                const size = queue.items.len;
+                var level = try std.ArrayList(T).initCapacity(self.allocator, 1);
+                defer level.deinit(self.allocator);
+
+                for (0..size) |_| {
+                    // As for BFS we want a FIFO queue rather than a LIFO will use the swapRemove() method
+                    // that gets the element specified by an index and removes it.
+                    const node = queue.swapRemove(0);
+                    try level.append(self.allocator, node.value);
+                    if (node.left) |left| try queue.append(self.allocator, left);
+                    if (node.right) |right| try queue.append(self.allocator, right);
+                }
+                std.debug.print("Level elements: {any}\n", .{level.items});
+                const level_copy = try self.allocator.dupe(T, level.items);
+
+                if (@mod(levelIndex, 2) == 0) {
+                    std.mem.reverse(T, level_copy);
+                }
+                try self.result.append(self.allocator, level_copy);
+            }
+
+            return self.result;
+        }
+
         pub fn deinit(self: *TreeNode(T)) void {
             if (self.left) |left| left.deinit();
             if (self.right) |right| right.deinit();
@@ -108,4 +141,7 @@ pub fn main() !void {
 
     const result = try treenode.*.levelOrder();
     std.debug.print("Result: {any}\n", .{result.items});
+
+    const resultZigZag = try treenode.*.levelOrderZigZag();
+    std.debug.print("Result ZigZag: {any}\n", .{resultZigZag.items});
 }
