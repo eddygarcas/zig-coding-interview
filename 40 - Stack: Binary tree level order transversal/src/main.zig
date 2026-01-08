@@ -1,5 +1,16 @@
 const std = @import("std");
 
+//In the context of binary trees, DFS (Depth-First Search) and BFS (Breadth-First Search)
+//are two fundamental tree traversal algorithms — each explores the tree in a different order:
+//DFS explores as deep as possible down one branch before backtracking.
+//BFS visits nodes level by level, from top to bottom and left to right.
+
+//| Feature     | DFS                           | BFS                        |
+//| ----------- | ----------------------------- | -------------------------- |
+//| Approach    | Go deep first                 | Visit level by level       |
+//| Data Struct | Stack / Recursion             | Queue                      |
+//| Memory      | Less if tree is deep          | More if tree is wide       |
+//| Use Cases   | Path finding, tree properties | Shortest path, level order |
 fn TreeNode(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -68,7 +79,6 @@ fn TreeNode(comptime T: type) type {
                     if (node.left) |left| try queue.append(self.allocator, left);
                     if (node.right) |right| try queue.append(self.allocator, right);
                 }
-                std.debug.print("Level elements: {any}\n", .{level.items});
                 const level_copy = try self.allocator.dupe(T, level.items);
 
                 if (@mod(levelIndex, 2) == 0 and zigzag) {
@@ -78,6 +88,55 @@ fn TreeNode(comptime T: type) type {
             }
 
             return self.result;
+        }
+
+        // levelPostOrder performs iterative post-order traversal using two stacks
+        // Stack states visualization:
+        // Initial:
+        // stack1: [3]
+        // stack2: []
+
+        // After first pop from stack1:
+        // stack1: [9, 20]  // Left and right children of 3
+        // stack2: [3]
+
+        // After second pop from stack1:
+        // stack1: [20]
+        // stack2: [3, 9]
+
+        // After third pop from stack1:
+        // stack1: [15, 7]  // Children of 20
+        // stack2: [3, 9, 20]
+
+        // After fourth pop from stack1:
+        // stack1: [7]
+        // stack2: [3, 9, 20, 15]
+
+        // After fifth pop from stack1:
+        // stack1: []
+        // stack2: [3, 9, 20, 15, 7]
+
+        // Final result after processing stack2:
+        // result: [9, 15, 7, 20, 3]
+        // Time: O(n) where n is number of nodes
+        // Space: O(n) for the two stacks
+        pub fn levelPostOrder(self: *TreeNode(T), result: *std.ArrayList(T)) !void {
+            var stackone: std.ArrayList(*TreeNode(T)) = try std.ArrayList(*TreeNode(T)).initCapacity(self.allocator, 2);
+            defer stackone.deinit(self.allocator);
+
+            var stacktwo: std.ArrayList(*TreeNode(T)) = try std.ArrayList(*TreeNode(T)).initCapacity(self.allocator, 2);
+            defer stacktwo.deinit(self.allocator);
+
+            try stackone.append(self.allocator, self);
+
+            while (stackone.pop()) |node| {
+                try stacktwo.append(self.allocator, node);
+                if (node.left) |left| try stackone.append(self.allocator, left);
+                if (node.right) |right| try stackone.append(self.allocator, right);
+            }
+            while (stacktwo.pop()) |node| {
+                try result.append(self.allocator, node.value);
+            }
         }
 
         pub fn deinit(self: *TreeNode(T)) void {
@@ -113,9 +172,23 @@ pub fn main() !void {
     treenode.right.?.left = try TreeNode(u32).init(allocator, 15);
     treenode.right.?.right = try TreeNode(u32).init(allocator, 25);
 
+    const tree =
+        \\        3
+        \\      /   \
+        \\     9     20
+        \\          /  \
+        \\         15   25
+    ;
+
+    std.debug.print("Tree : \n{s}\n", .{tree});
     const result = try treenode.*.levelOrder(false);
-    std.debug.print("Result: {any}\n", .{result.items});
+    std.debug.print("Result Level order: {any}\n", .{result.items});
 
     const resultZigZag = try treenode.*.levelOrder(true);
-    std.debug.print("Result ZigZag: {any}\n", .{resultZigZag.items});
+    std.debug.print("Result Zig-Zag    : {any}\n", .{resultZigZag.items});
+
+    var resultPostOrder = try std.ArrayList(u32).initCapacity(allocator, 0);
+    defer resultPostOrder.deinit(allocator);
+    _ = try treenode.*.levelPostOrder(&resultPostOrder);
+    std.debug.print("Result Post Order : {any}\n", .{resultPostOrder.items});
 }
