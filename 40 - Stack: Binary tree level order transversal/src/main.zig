@@ -48,6 +48,8 @@ fn TreeNode(comptime T: type) type {
         pub fn levelOrder(self: *TreeNode(T), zigzag: bool) !std.ArrayList([]T) {
             var queue: std.ArrayList(*TreeNode(T)) = try std.ArrayList(*TreeNode(T)).initCapacity(self.allocator, 2);
             defer queue.deinit(self.allocator);
+            // Clear previous reslts, the method has to free all the dupe() items and then reset the array list to zero.
+            self.clearResults();
 
             try queue.append(self.allocator, self);
 
@@ -84,6 +86,11 @@ fn TreeNode(comptime T: type) type {
             for (self.result.items) |lvl| self.allocator.free(lvl); // free each duped slice
             self.result.deinit(self.allocator);
             self.allocator.destroy(self);
+        }
+
+        pub fn clearResults(self: *TreeNode(T)) void {
+            for (self.result.items) |lvl| self.allocator.free(lvl);
+            self.result.clearRetainingCapacity(); // free each duped slice
         }
     };
 }
