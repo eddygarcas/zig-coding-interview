@@ -84,6 +84,24 @@ fn Stock(comptime T: type) type {
             return self.bestSellingPrice(min_price, max_profit, i + 1);
         }
 
+        // bestProfitSellingPriceNoDays calculates maximum profit possible by buying and selling once.
+        // This simplified version only returns the profit amount without tracking buy/sell days.
+        // Uses a single pass through prices to track minimum price seen and maximum profit possible.
+        // Returns: Maximum profit achievable (may be 0 if no profit possible)
+        pub fn bestProfitSellingPriceNoDays(self: *Self) !T {
+            var buyPrice: T = std.math.maxInt(T);
+            var profit: T = undefined;
+
+            for (self.prices.items) |price| {
+                if (price < buyPrice) {
+                    buyPrice = price;
+                } else {
+                    profit = @max(profit, (price - buyPrice));
+                }
+            }
+            return profit;
+        }
+
         pub fn deinit(self: *Self) void {
             self.prices.deinit(self.allocator);
             self.allocator.destroy(self);
@@ -103,5 +121,8 @@ pub fn main() !void {
     var stock = try Stock(i32).init(allocator, &[_]i32{ 7, 1, 5, 3 }, -1, -1);
     defer stock.deinit();
     const result = try stock.bestSellingPrice(7, 0, 0);
-    std.debug.print("Best Selling Price : {d},{d}\n", .{ result[0], result[1] });
+    std.debug.print("Best selling price : {d}, price: {d}\n", .{ result[0], result[1] });
+
+    const price_no_days = try stock.bestProfitSellingPriceNoDays();
+    std.debug.print("Best price no days : {d}\n", .{price_no_days});
 }
